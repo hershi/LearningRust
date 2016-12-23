@@ -1,82 +1,11 @@
 use std::iter;
+use iterators::NeighborsIterator;
 
 #[derive(Debug)]
 pub struct Board {
-    grid : Vec<Vec<bool>>,
-    cols : usize,
-    rows : usize,
-}
-
-#[derive(Debug)]
-pub struct NeighborsIterator<'a> {
-    board : &'a Board,
-    points : Vec<(usize,usize)>,
-    offset : usize,
-}
-
-impl <'a> NeighborsIterator<'a> {
-    fn new(board : &Board, x : usize, y : usize) -> NeighborsIterator {
-        let tx = x as isize;
-        let ty = y as isize;
-        let points = (-1..2).flat_map(|i| iter::repeat(i).take(3))
-               .zip((-1..2).cycle())
-               .filter(|&(i,j)| (i != 0 || j != 0))
-               .map(|(i,j)| (tx + i, ty + j))
-               .filter(|&(i,j)| i >= 0 && j >= 0)
-               .filter(|&(i,j)| i < board.cols as isize && j < board.rows as isize) 
-               .map(|(i,j)| (i as usize, j as usize))
-               .inspect(|p| println!("D: {:?},", p))
-               .collect();
-
-        NeighborsIterator {
-            board : board,
-            points : points,
-            offset : 0,
-        }
-    }
-}
-
-impl <'a> Iterator for NeighborsIterator<'a> {
-    type Item = bool;
-    fn next(&mut self) -> Option<bool> {
-        if self.offset >= self.points.len() { 
-            None 
-        } else { 
-            let point = self.points[self.offset];
-            self.offset += 1; 
-            Some(self.board.grid[point.0][point.1])
-        }
-    }
-}
-
-pub struct ForwardingNeighborsIterator <'a, ItType> {
-    board : &'a Board,
-    internal_iterator : ItType,    
-}
-
-impl <'a, ItType> ForwardingNeighborsIterator<'a, ItType> {
-    fn new(board : &Board, x : usize, y : usize) -> ForwardingNeighborsIterator<'a, ItType> {
-        let tx = x as isize;
-        let ty = y as isize;        
-        ForwardingNeighborsIterator { 
-            board : board, 
-            internal_iterator :
-                (-1..2).flat_map(|i| iter::repeat(i).take(3))
-                .zip((-1..2).cycle())
-                .filter(|&(i,j)| (i != 0 || j != 0))
-                .map(|(i,j)| (tx + i, ty + j))
-                .filter(|&(i,j)| i >= 0 && j >= 0)
-                .filter(|&(i,j)| i < board.cols as isize && j < board.rows as isize) 
-                .map(|(i,j)| board.grid[i as usize][j as usize]) as ItType
-        }
-    }
-}
-
-impl <'a, ItType : Iterator<Item=bool>> Iterator for ForwardingNeighborsIterator<'a, ItType> {
-    type Item = bool;
-    fn next(&mut self) -> Option<bool> {
-        self.internal_iterator.next()
-    }
+    pub grid : Vec<Vec<bool>>,
+    pub cols : usize,
+    pub rows : usize,
 }
 
 impl Board {
@@ -97,6 +26,15 @@ impl Board {
 
     pub fn neighbors(&self, x : usize, y : usize) -> NeighborsIterator {
         NeighborsIterator::new(self, x, y)
+    }
+
+    pub fn print(&self) {
+        for x in 0..self.cols {
+            for y in 0..self.rows {
+                print!("{}", if self.grid[x][y] { "*" } else { "-" });
+            }
+            println!("");
+        }        
     }
 }
 
